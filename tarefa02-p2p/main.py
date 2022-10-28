@@ -36,7 +36,8 @@ class ServidorP2P:
             msg_decoded = msg.decode("utf-8")
             string_dict = json.loads(msg_decoded)
             if string_dict["codigo"] == 0:
-                dest = (cliente, self.node.porta)
+                print("pegando pelo metodo join o sucessor e antecessor do no que vamos inseir")
+                dest = (cliente)#duvida aqui, cliente ja tem o ip e a porta?
                 msg = {}
                 msg["codigo"] = 64
                 msg["id_sucessor"] = self.node.id
@@ -48,62 +49,67 @@ class ServidorP2P:
             elif string_dict["codigo"] == 1:
                 pass
             elif string_dict["codigo"] == 2:
-                    if self.node.id == self.node.sucessor["id"]:
-                        dest = (string_dict["ip_origem_busca"], self.node.porta)
-                        msg = {}
-                        msg['codigo'] = 66
-                        msg['id_busca'] = string_dict['id_busca']
-                        msg['id_origem'] = string_dict['id_busca']
-                        msg['ip_origem'] = string_dict['ip_origem_busca']
-                        msg['id_sucessor'] = self.node.sucessor['id']
-                        msg['ip_sucessor'] = self.node.sucessor['ip']
-                        string_json = json.dumps(msg)
-                        self.udp.sendto(string_json.encode('utf-8'), dest)
-                    elif string_dict['id_busca'] > self.node.id and self.node.sucessor[id] < string_dict['id_busca']:
-                        dest = (string_dict["ip_origem_busca"], self.node.porta)
-                        msg = {}
-                        msg['codigo'] = 66
-                        msg['id_busca'] = string_dict['id_busca']
-                        msg['id_origem'] = string_dict['id_busca']
-                        msg['ip_origem'] = string_dict['ip_origem_busca']
-                        msg['id_sucessor'] = self.node.sucessor['id']
-                        msg['ip_sucessor'] = self.node.sucessor['ip']
-                        string_json = json.dumps(msg)
-                        self.udp.sendto(string_json.encode('utf-8'), dest)
-                    elif string_dict['id_busca'] < self.node.id:
-                        dest = (string_dict["ip_origem_busca"], self.node.porta)
-                        msg = {}
-                        msg['codigo'] = 66
-                        msg['id_busca'] = string_dict['id_busca']
-                        msg['id_origem'] = string_dict['id_busca']
-                        msg['ip_origem'] = string_dict['ip_origem_busca']
-                        msg['id_sucessor'] = self.node.id
-                        msg['ip_sucessor'] = self.node.ip
-                        string_json = json.dumps(msg)
-                        self.udp.sendto(string_json.encode('utf-8'), dest)
-                    elif string_dict['id_busca'] > self.node.id: 
-                        dest = (self.node.sucessor, self.node.porta)
-                        msg = {}
-                        msg["codigo"] = 2
-                        msg["identificador"] = string_dict['id_busca']
-                        msg["ip_origem_busca"] = string_dict['ip_origem_busca']
-                        msg["id_busca"] = string_dict['id_busca']
-                        string_json = json.dumps(msg)
-                        self.udp.sendto(string_json.encode('utf-8'), dest)
-
-
-                    
+                if self.node.id == self.node.sucessor["id"]:
+                    print("Fazendo Lookup")
+                    dest = (string_dict["ip_origem_busca"], self.node.porta)
+                    msg = {}
+                    msg['codigo'] = 66
+                    msg['id_busca'] = string_dict['id_busca']
+                    msg['id_origem'] = string_dict['id_busca']
+                    msg['ip_origem'] = string_dict['ip_origem_busca']
+                    msg['id_sucessor'] = self.node.sucessor['id']
+                    msg['ip_sucessor'] = self.node.sucessor['ip']
+                    string_json = json.dumps(msg)
+                    self.udp.sendto(string_json.encode('utf-8'), dest)
+                elif string_dict['id_busca'] > self.node.id and self.node.sucessor['id'] < string_dict['id_busca']:
+                    dest = (string_dict["ip_origem_busca"], self.node.porta)
+                    msg = {}
+                    msg['codigo'] = 66
+                    msg['id_busca'] = string_dict['id_busca']
+                    msg['id_origem'] = string_dict['id_busca']
+                    msg['ip_origem'] = string_dict['ip_origem_busca']
+                    msg['id_sucessor'] = self.node.sucessor['id']
+                    msg['ip_sucessor'] = self.node.sucessor['ip']
+                    string_json = json.dumps(msg)
+                    self.udp.sendto(string_json.encode('utf-8'), dest)
+                elif string_dict['id_busca'] < self.node.id:
+                    dest = (string_dict["ip_origem_busca"], self.node.porta)
+                    msg = {}
+                    msg['codigo'] = 66
+                    msg['id_busca'] = string_dict['id_busca']
+                    msg['id_origem'] = string_dict['id_busca']
+                    msg['ip_origem'] = string_dict['ip_origem_busca']
+                    msg['id_sucessor'] = self.node.id
+                    msg['ip_sucessor'] = self.node.ip
+                    string_json = json.dumps(msg)
+                    self.udp.sendto(string_json.encode('utf-8'), dest)
+                elif string_dict['id_busca'] > self.node.id: 
+                    dest = (self.node.sucessor, self.node.porta)
+                    msg = {}
+                    msg["codigo"] = 2
+                    msg["identificador"] = string_dict["id_busca"]
+                    msg["ip_origem_busca"] = string_dict["ip_origem_busca"]
+                    msg["id_busca"] = string_dict["id_busca"]
+                    string_json = json.dumps(msg)
+                    self.udp.sendto(string_json.encode('utf-8'), dest)
 
             elif string_dict["codigo"] == 3:
+                if "id_novo_sucessor" in string_dict.keys():
+                    self.node.sucessor = {"ip": string_dict["ip_novo_sucessor"], "id": string_dict["id_novo_sucessor"]}
+                    print("Nó antecessor atualizado com update")
+                else:
+                    self.node.antecessor = {"ip": string_dict["ip_novo_antecessor"], "id": string_dict["id_novo_antecessor"]}
+                    print("Nó sucessor atualizado com update")
                 
-                pass
+                
             elif string_dict["codigo"] == 64:
                 self.node.antecessor["id"] = string_dict["id_antecessor"]
                 self.node.antecessor["ip"] = string_dict["ip_antecessor"]
                 self.node.sucessor["id"] = string_dict["id_sucessor"]
                 self.node.sucessor["ip"] = string_dict["ip_sucessor"]
+                print("Setado o antecessor e sucessor do novo no, hora do update dos seus nós vizinhos")
 
-                dest = (self.node.antecessor, self.node.porta)
+                dest = (self.node.antecessor["ip"], self.node.porta)
                 msg = {}
                 msg['codigo'] = 3
                 msg['identificador'] = self.node.id
@@ -112,7 +118,7 @@ class ServidorP2P:
                 string_json = json.dumps(msg)
                 self.udp.sendto(string_json.encode('utf-8'), dest)
 
-                dest = (self.node.sucessor, self.node.porta)
+                dest = (self.node.sucessor["ip"], self.node.porta)
                 msg = {}
                 msg['codigo'] = 3
                 msg['identificador'] = self.node.id
@@ -123,6 +129,7 @@ class ServidorP2P:
             elif string_dict["codigo"] == 65:
                 pass
             elif string_dict["codigo"] == 66:
+                print(f"Resposta do Lookup: {string_dict['ip_sucessor']}")
                 old = Node(string_dict['ip_origem'])
 
                 dest = (string_dict["ip_sucessor"], self.node.porta)
